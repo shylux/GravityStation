@@ -17,8 +17,8 @@ public class PlayerController : NetworkBehaviour {
 		var x = Input.GetAxis ("Horizontal");
 		var z = Input.GetAxis ("Vertical");
 		Vector3 movement = new Vector3 (x, 0, z).normalized * Time.deltaTime * speed;
-		movement = Quaternion.AngleAxis(transform.rotation.eulerAngles.y, Vector3.up) * movement;
-		transform.Translate (movement, Space.World);
+		//movement = Quaternion.AngleAxis(transform.rotation.eulerAngles.y, Vector3.up) * movement;
+		transform.Translate (movement, Space.Self);
 
 		if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)) {
 			CmdFire();

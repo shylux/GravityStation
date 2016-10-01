@@ -8,10 +8,10 @@ public class SphereGenerator : MonoBehaviour {
 	[Tooltip("Approximate size of a tile in qubic meters.")]
 	public float tileSize = 1f;
 	public float radius = 40f;
-	[Tooltip("Deformation of the whole planet.")]
-	public float deformation = .25f;
-	[Tooltip("Size independent deformation.")]
-	public float ruggedness = .5f;
+//	[Tooltip("Deformation of the whole planet.")]
+//	public float deformation = .25f;
+//	[Tooltip("Size independent deformation.")]
+//	public float ruggedness = .5f;
 
 	public bool doubleSided = true;
 	public float floorHeight = 1f;
@@ -52,8 +52,8 @@ public class SphereGenerator : MonoBehaviour {
 		float middleRadius = (point1.magnitude + point2.magnitude) / 2;
 		float variance = Mathf.Abs (point1.magnitude - point2.magnitude);
 		float rad = middleRadius;
-		rad += (Random.value - .5f) * deformation*radius/Mathf.Pow(currentRefineStep+1,2); // deformation
-		rad += (Random.value - .5f) * variance * ruggedness; // ruggedness
+//		rad += (Random.value - .5f) * deformation*radius/Mathf.Pow(currentRefineStep+1,2); // deformation
+//		rad += (Random.value - .5f) * variance * ruggedness; // ruggedness
 		vertList.Add( middle.normalized * rad);
 
 		// store it, return index
@@ -61,19 +61,20 @@ public class SphereGenerator : MonoBehaviour {
 
 		return i;
 	}
-//
-//	private int createInsidePoint(int i) {
-//		int ret;
-//		if (insideIndexCache.TryGetValue(i, out ret)) {
-//			return ret;
-//		}
-//		Vector3 point = vertList [i];
-//		Vector3 insidePoint = point * (radius - floorHeight) / radius;
-//		int index = vertList.Count;
-//		vertList.Add (insidePoint);
-//		insideIndexCache.Add (i, index);
-//		return index;
-//	}
+
+	private int createInsidePoint(int i, ref Dictionary<int, int> insideIndexCache, ref List<Vector3> vertList, ref Vector2[] uv) {
+		int ret;
+		if (insideIndexCache.TryGetValue(i, out ret)) {
+			return ret;
+		}
+		Vector3 point = vertList [i];
+		Vector3 insidePoint = point * (radius - floorHeight) / radius;
+		int index = vertList.Count;
+		vertList.Add (insidePoint);
+		uv [index] = uv [i];
+		insideIndexCache.Add (i, index);
+		return index;
+	}
 
 	void Start() {
 		MeshFilter filter = GetOrAddComponent< MeshFilter >();
@@ -125,24 +126,6 @@ public class SphereGenerator : MonoBehaviour {
 		createSide (v6, v2, v10);
 		createSide (v8, v6, v7);
 		createSide (v9, v8, v1);
-		return;
-
-
-//
-//		// inside floor
-//		if (doubleSided) {
-//			int facesCount = faces.Count;
-//			for (int i = 0; i < facesCount; i++) {
-//				TriangleIndices face = faces [i];
-//				int vert1 = createInsidePoint (face.v1);
-//				int vert2 = createInsidePoint (face.v2);
-//				int vert3 = createInsidePoint (face.v3);
-//
-//				faces.Add(new TriangleIndices(vert3, vert2, vert1));
-//			}
-//		}
-
-
 	}
 
 	void createSide(Vector3 v1, Vector3 v2, Vector3 v3) {
@@ -156,32 +139,35 @@ public class SphereGenerator : MonoBehaviour {
 		MeshFilter meshFilter = go.AddComponent<MeshFilter> () as MeshFilter;
 		Mesh mesh = new Mesh ();
 		meshFilter.mesh = mesh;
+		MeshCollider collider = go.AddComponent<MeshCollider> () as MeshCollider;
 
 		List<TriangleIndices> faces = new List<TriangleIndices>();
 		List<Vector3> vertList = new List<Vector3>();
-		ArrayList<Vector2> uv = new ArrayList<Vector2> ();
 		Dictionary<long, int> middlePointIndexCache = new Dictionary<long, int>();
-		Dictionary<int, int> insideIndexCache = new Dictionary<int, int>();
 		int currentRefineStep;
 
-		// add first 3 vertices
-		vertList.AddRange(new Vector3[] {v1, v2, v3});
-		uv = new Vector2[] { uvPoints [0], uvPoints [1], uvPoints [2] };
-		faces.Add (new TriangleIndices (0, 1, 2));
-
-		// REFINE
 		// Calculate how many steps have to be made until a face is approx small enough.
 		float surfaceArea = 4 * Mathf.PI * radius * radius;
 		float x = Mathf.Log(surfaceArea / (tileSize * 20), 4);
 		int refineSteps = Mathf.CeilToInt (x);
+		int vertCount = (int)(2 + Mathf.Pow(2, 2*refineSteps) + 3 * Mathf.Pow(2, refineSteps)) / 2;
+		if (doubleSided)
+			vertCount *= 2;
+		Vector2[] uv = new Vector2[vertCount];
+
+
+		// add first 3 vertices
+		vertList.AddRange(new Vector3[] {v1, v2, v3});
+		//uv = new Vector2[] { uvPoints [0], uvPoints [1], uvPoints [2] };
+		uv[0] = uvPoints [0];
+		uv[1] = uvPoints [1];
+		uv[2] = uvPoints [2];
+		faces.Add (new TriangleIndices (0, 1, 2));
 
 		// refine triangles
 		for (currentRefineStep = 0; currentRefineStep < refineSteps; currentRefineStep++) {
 
 			List<TriangleIndices> faces2 = new List<TriangleIndices>();
-			Vector2[] uv2 = new Vector2[currentRefineStep];
-			uv.CopyTo (uv2, 0);
-			uv = uv2;
 			foreach (var tri in faces) {
 				// replace triangle by 4 triangles
 				int a = getMiddlePoint(tri.v1, tri.v2, ref middlePointIndexCache, ref vertList, currentRefineStep);
@@ -200,6 +186,21 @@ public class SphereGenerator : MonoBehaviour {
 			faces = faces2;
 		}
 
+		
+		// inside floor
+		if (doubleSided) {
+			Dictionary<int, int> insideIndexCache = new Dictionary<int, int>();
+			int facesCount = faces.Count;
+			for (int i = 0; i < facesCount; i++) {
+				TriangleIndices face = faces [i];
+				int vert1 = createInsidePoint (face.v1, ref insideIndexCache, ref vertList, ref uv);
+				int vert2 = createInsidePoint (face.v2, ref insideIndexCache, ref vertList, ref uv);
+				int vert3 = createInsidePoint (face.v3, ref insideIndexCache, ref vertList, ref uv);
+
+				faces.Add(new TriangleIndices(vert3, vert2, vert1));
+			}
+		}
+
 		// FINALIZE
 		mesh.vertices = vertList.ToArray();
 
@@ -210,8 +211,6 @@ public class SphereGenerator : MonoBehaviour {
 			triList.Add( faces[i].v3 );
 		}
 		mesh.triangles = triList.ToArray();
-		//mesh.uv = uvList.ToArray ();
-//		mesh.uv = new Vector2[vertList.Count];
 		mesh.uv = uv;
 
 		Vector3[] normales = new Vector3[ vertList.Count];
@@ -221,6 +220,8 @@ public class SphereGenerator : MonoBehaviour {
 
 		mesh.RecalculateBounds();
 		mesh.Optimize();
+
+		collider.sharedMesh = mesh;
 	}
 
 	Vector2 getOppositeUV(Vector2[] uvs) {

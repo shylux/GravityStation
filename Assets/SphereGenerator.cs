@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class SphereGenerator : MonoBehaviour {
 
@@ -15,10 +16,7 @@ public class SphereGenerator : MonoBehaviour {
 	public bool doubleSided = true;
 	public float floorHeight = 1f;
 
-	Dictionary<long, int> middlePointIndexCache = new Dictionary<long, int>();
-	Dictionary<int, int> insideIndexCache = new Dictionary<int, int>();
-	List<Vector3> vertList = new List<Vector3>();
-	int currentRefineStep;
+	private Vector2[] uvPoints = new Vector2[3] {new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 0f)};
 	
 	private struct TriangleIndices {
 		public int v1, v2, v3;
@@ -32,7 +30,7 @@ public class SphereGenerator : MonoBehaviour {
 	}
 
 	// return index of point in the middle of p1 and p2. Create it if it doesn't exists.
-	private int getMiddlePoint(int p1, int p2) {
+	private int getMiddlePoint(int p1, int p2, ref Dictionary<long, int> middlePointIndexCache, ref List<Vector3> vertList, int currentRefineStep) {
 		// first check if we have it already
 		bool firstIsSmaller = p1 < p2;
 		long smallerIndex = firstIsSmaller ? p1 : p2;
@@ -63,76 +61,115 @@ public class SphereGenerator : MonoBehaviour {
 
 		return i;
 	}
-
-	private int createInsidePoint(int i) {
-		int ret;
-		if (insideIndexCache.TryGetValue(i, out ret)) {
-			return ret;
-		}
-		Vector3 point = vertList [i];
-		Vector3 insidePoint = point * (radius - floorHeight) / radius;
-		int index = vertList.Count;
-		vertList.Add (insidePoint);
-		insideIndexCache.Add (i, index);
-		return index;
-	}
+//
+//	private int createInsidePoint(int i) {
+//		int ret;
+//		if (insideIndexCache.TryGetValue(i, out ret)) {
+//			return ret;
+//		}
+//		Vector3 point = vertList [i];
+//		Vector3 insidePoint = point * (radius - floorHeight) / radius;
+//		int index = vertList.Count;
+//		vertList.Add (insidePoint);
+//		insideIndexCache.Add (i, index);
+//		return index;
+//	}
 
 	void Start() {
 		MeshFilter filter = GetOrAddComponent< MeshFilter >();
-		Mesh mesh = filter.sharedMesh;
-		mesh.Clear();
-
+		Mesh mesh = filter.mesh;
+		if (mesh)
+			mesh.Clear ();
+		else {
+			filter.mesh = new Mesh (); 
+		}
+			
 		// create 12 vertices of a icosahedron
 		float t = (1f + Mathf.Sqrt(5f)) / 2f;
 
-		vertList.Add(new Vector3(-1f,  t,  0f).normalized * radius);
-		vertList.Add(new Vector3( 1f,  t,  0f).normalized * radius);
-		vertList.Add(new Vector3(-1f, -t,  0f).normalized * radius);
-		vertList.Add(new Vector3( 1f, -t,  0f).normalized * radius);
+		Vector3 v0 = new Vector3(-1f,  t,  0f).normalized * radius;
+		Vector3 v1 = new Vector3( 1f,  t,  0f).normalized * radius;
+		Vector3 v2 = new Vector3(-1f, -t,  0f).normalized * radius;
+		Vector3 v3 = new Vector3( 1f, -t,  0f).normalized * radius;
 
-		vertList.Add(new Vector3( 0f, -1f,  t).normalized * radius);
-		vertList.Add(new Vector3( 0f,  1f,  t).normalized * radius);
-		vertList.Add(new Vector3( 0f, -1f, -t).normalized * radius);
-		vertList.Add(new Vector3( 0f,  1f, -t).normalized * radius);
+		Vector3 v4 = new Vector3( 0f, -1f,  t).normalized * radius;
+		Vector3 v5 = new Vector3( 0f,  1f,  t).normalized * radius;
+		Vector3 v6 = new Vector3( 0f, -1f, -t).normalized * radius;
+		Vector3 v7 = new Vector3( 0f,  1f, -t).normalized * radius;
 
-		vertList.Add(new Vector3( t,  0f, -1f).normalized * radius);
-		vertList.Add(new Vector3( t,  0f,  1f).normalized * radius);
-		vertList.Add(new Vector3(-t,  0f, -1f).normalized * radius);
-		vertList.Add(new Vector3(-t,  0f,  1f).normalized * radius);
+		Vector3 v8 = new Vector3( t,  0f, -1f).normalized * radius;
+		Vector3 v9 = new Vector3( t,  0f,  1f).normalized * radius;
+		Vector3 v10 = new Vector3(-t,  0f, -1f).normalized * radius;
+		Vector3 v11 = new Vector3(-t,  0f,  1f).normalized * radius;
+
+		createSide (v0, v11, v5);
+		createSide (v0, v5, v1);
+		createSide (v0, v1, v7);
+		createSide (v0, v7, v10);
+		createSide (v0, v10, v11);
+
+		createSide (v1, v5, v9);
+		createSide (v5, v11, v4);
+		createSide (v11, v10, v2);
+		createSide (v10, v7, v6);
+		createSide (v7, v1, v8);
+
+		createSide (v3, v9, v4);
+		createSide (v3, v4, v2);
+		createSide (v3, v2, v6);
+		createSide (v3, v6, v8);
+		createSide (v3, v8, v9);
+
+		createSide (v4, v9, v5);
+		createSide (v2, v4, v11);
+		createSide (v6, v2, v10);
+		createSide (v8, v6, v7);
+		createSide (v9, v8, v1);
+		return;
 
 
-		// create 20 triangles of the icosahedron
+//
+//		// inside floor
+//		if (doubleSided) {
+//			int facesCount = faces.Count;
+//			for (int i = 0; i < facesCount; i++) {
+//				TriangleIndices face = faces [i];
+//				int vert1 = createInsidePoint (face.v1);
+//				int vert2 = createInsidePoint (face.v2);
+//				int vert3 = createInsidePoint (face.v3);
+//
+//				faces.Add(new TriangleIndices(vert3, vert2, vert1));
+//			}
+//		}
+
+
+	}
+
+	void createSide(Vector3 v1, Vector3 v2, Vector3 v3) {
+		// SETUP
+		GameObject go = new GameObject ();
+		go.name = "Side";
+		go.transform.parent = this.transform;
+
+		MeshRenderer meshRenderer = go.AddComponent<MeshRenderer> () as MeshRenderer;
+		meshRenderer.material = (this.GetComponent<MeshRenderer> () as MeshRenderer).material;
+		MeshFilter meshFilter = go.AddComponent<MeshFilter> () as MeshFilter;
+		Mesh mesh = new Mesh ();
+		meshFilter.mesh = mesh;
+
 		List<TriangleIndices> faces = new List<TriangleIndices>();
+		List<Vector3> vertList = new List<Vector3>();
+		ArrayList<Vector2> uv = new ArrayList<Vector2> ();
+		Dictionary<long, int> middlePointIndexCache = new Dictionary<long, int>();
+		Dictionary<int, int> insideIndexCache = new Dictionary<int, int>();
+		int currentRefineStep;
 
-		// 5 faces around point 0
-		faces.Add(new TriangleIndices(0, 11, 5));
-		faces.Add(new TriangleIndices(0, 5, 1));
-		faces.Add(new TriangleIndices(0, 1, 7));
-		faces.Add(new TriangleIndices(0, 7, 10));
-		faces.Add(new TriangleIndices(0, 10, 11));
+		// add first 3 vertices
+		vertList.AddRange(new Vector3[] {v1, v2, v3});
+		uv = new Vector2[] { uvPoints [0], uvPoints [1], uvPoints [2] };
+		faces.Add (new TriangleIndices (0, 1, 2));
 
-		// 5 adjacent faces 
-		faces.Add(new TriangleIndices(1, 5, 9));
-		faces.Add(new TriangleIndices(5, 11, 4));
-		faces.Add(new TriangleIndices(11, 10, 2));
-		faces.Add(new TriangleIndices(10, 7, 6));
-		faces.Add(new TriangleIndices(7, 1, 8));
-
-		// 5 faces around point 3
-		faces.Add(new TriangleIndices(3, 9, 4));
-		faces.Add(new TriangleIndices(3, 4, 2));
-		faces.Add(new TriangleIndices(3, 2, 6));
-		faces.Add(new TriangleIndices(3, 6, 8));
-		faces.Add(new TriangleIndices(3, 8, 9));
-
-		// 5 adjacent faces 
-		faces.Add(new TriangleIndices(4, 9, 5));
-		faces.Add(new TriangleIndices(2, 4, 11));
-		faces.Add(new TriangleIndices(6, 2, 10));
-		faces.Add(new TriangleIndices(8, 6, 7));
-		faces.Add(new TriangleIndices(9, 8, 1));
-
-
+		// REFINE
 		// Calculate how many steps have to be made until a face is approx small enough.
 		float surfaceArea = 4 * Mathf.PI * radius * radius;
 		float x = Mathf.Log(surfaceArea / (tileSize * 20), 4);
@@ -140,14 +177,21 @@ public class SphereGenerator : MonoBehaviour {
 
 		// refine triangles
 		for (currentRefineStep = 0; currentRefineStep < refineSteps; currentRefineStep++) {
-			
+
 			List<TriangleIndices> faces2 = new List<TriangleIndices>();
+			Vector2[] uv2 = new Vector2[currentRefineStep];
+			uv.CopyTo (uv2, 0);
+			uv = uv2;
 			foreach (var tri in faces) {
 				// replace triangle by 4 triangles
-				int a = getMiddlePoint(tri.v1, tri.v2);
-				int b = getMiddlePoint(tri.v2, tri.v3);
-				int c = getMiddlePoint(tri.v3, tri.v1);
+				int a = getMiddlePoint(tri.v1, tri.v2, ref middlePointIndexCache, ref vertList, currentRefineStep);
+				int b = getMiddlePoint(tri.v2, tri.v3, ref middlePointIndexCache, ref vertList, currentRefineStep);
+				int c = getMiddlePoint(tri.v3, tri.v1, ref middlePointIndexCache, ref vertList, currentRefineStep);
+				uv[a] = getOppositeUV(new Vector2[] {uv[tri.v1], uv[tri.v2]});
+				uv[b] = getOppositeUV(new Vector2[] {uv[tri.v2], uv[tri.v3]});
+				uv[c] = getOppositeUV(new Vector2[] {uv[tri.v3], uv[tri.v1]});
 
+				// split face in 4 new faces
 				faces2.Add(new TriangleIndices(tri.v1, a, c));
 				faces2.Add(new TriangleIndices(tri.v2, b, a));
 				faces2.Add(new TriangleIndices(tri.v3, c, b));
@@ -156,19 +200,7 @@ public class SphereGenerator : MonoBehaviour {
 			faces = faces2;
 		}
 
-		// inside floor
-		if (doubleSided) {
-			int facesCount = faces.Count;
-			for (int i = 0; i < facesCount; i++) {
-				TriangleIndices face = faces [i];
-				int v1 = createInsidePoint (face.v1);
-				int v2 = createInsidePoint (face.v2);
-				int v3 = createInsidePoint (face.v3);
-
-				faces.Add(new TriangleIndices(v3, v2, v1));
-			}
-		}
-
+		// FINALIZE
 		mesh.vertices = vertList.ToArray();
 
 		List< int > triList = new List<int>();
@@ -178,17 +210,27 @@ public class SphereGenerator : MonoBehaviour {
 			triList.Add( faces[i].v3 );
 		}
 		mesh.triangles = triList.ToArray();
-		mesh.uv = new Vector2[ mesh.vertices.Length ];
+		//mesh.uv = uvList.ToArray ();
+//		mesh.uv = new Vector2[vertList.Count];
+		mesh.uv = uv;
 
 		Vector3[] normales = new Vector3[ vertList.Count];
-		for( int i = 0; i < normales.Length; i++ )
-			normales[i] = vertList[i].normalized;
-
-
+		for (int i = 0; i < normales.Length; i++)
+			normales [i] = vertList [i].normalized;
 		mesh.normals = normales;
 
 		mesh.RecalculateBounds();
 		mesh.Optimize();
+	}
+
+	Vector2 getOppositeUV(Vector2[] uvs) {
+		if (!uvs.Contains(uvPoints[0]))
+			return uvPoints[0];
+		if (!uvs.Contains (uvPoints [1]))
+			return uvPoints [1];
+		if (!uvs.Contains (uvPoints [2]))
+			return uvPoints [2];
+		return Vector2.zero;
 	}
 
 	T GetOrAddComponent<T>() where T: Component {

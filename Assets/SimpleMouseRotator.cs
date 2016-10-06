@@ -1,20 +1,23 @@
 using System;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class SimpleMouseRotator: MonoBehaviour {
+public class SimpleMouseRotator: NetworkBehaviour {
     public float rotationSpeed = 10;
-    
+	public GameObject head;
+
     private Vector3 targetAngles;
     private Quaternion originalRotation;
 
     private void Start() {
-        originalRotation = transform.localRotation;
+		originalRotation = head.transform.localRotation;
     }
 
-    private void Update()
-    {
+    private void FixedUpdate() {
+		if (!isLocalPlayer)
+			return;
         // we make initial calculations from the original local rotation
-        transform.localRotation = originalRotation;
+        //transform.localRotation = originalRotation;
 
         // read input from mouse or mobile controls
 		float inputH = Input.GetAxis("Mouse X");
@@ -26,8 +29,10 @@ public class SimpleMouseRotator: MonoBehaviour {
 
 		targetAngles.x = Mathf.Clamp(targetAngles.x, -90, 90);
       
-
         // update the actual gameobject's rotation
-		transform.localRotation = originalRotation*Quaternion.Euler(-targetAngles.x, targetAngles.y, 0);
+		head.transform.localRotation = originalRotation*Quaternion.Euler(-targetAngles.x, 0, 0);
+
+		// propagate left-right rotation to parent
+		transform.localRotation = transform.localRotation*Quaternion.Euler(0, targetAngles.y, 0);
     }
 }

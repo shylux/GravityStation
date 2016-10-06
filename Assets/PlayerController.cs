@@ -10,15 +10,18 @@ public class PlayerController : NetworkBehaviour {
 	public Transform bulletSpawn;
 	
 	// Update is called once per frame
-	void Update () {
+	void FixedUpdate () {
 		if (!isLocalPlayer)
 			return;
 
 		var x = Input.GetAxis ("Horizontal");
 		var z = Input.GetAxis ("Vertical");
-		Vector3 movement = new Vector3 (x, 0, z).normalized * Time.deltaTime * speed;
+		//Vector3 movement = new Vector3 (x, 0, z).normalized * Time.deltaTime * speed;
 		//movement = Quaternion.AngleAxis(transform.rotation.eulerAngles.y, Vector3.up) * movement;
-		transform.Translate (movement, Space.Self);
+		//transform.Translate (movement, Space.Self);
+		var _oldPosition = transform.position;
+		transform.Translate(Vector3.forward * Time.deltaTime * speed * z, Space.Self);
+		Debug.DrawLine (_oldPosition, _oldPosition + (transform.position - _oldPosition) * 15);
 
 		if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)) {
 			CmdFire();

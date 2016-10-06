@@ -20,7 +20,7 @@ public class PlayerController : NetworkBehaviour {
 		//movement = Quaternion.AngleAxis(transform.rotation.eulerAngles.y, Vector3.up) * movement;
 		//transform.Translate (movement, Space.Self);
 		var _oldPosition = transform.position;
-		transform.Translate(Vector3.forward * Time.deltaTime * speed * z, Space.Self);
+		transform.Translate((Vector3.forward * z + Vector3.right * x) * Time.deltaTime * speed, Space.Self);
 		Debug.DrawLine (_oldPosition, _oldPosition + (transform.position - _oldPosition) * 15);
 
 		if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)) {

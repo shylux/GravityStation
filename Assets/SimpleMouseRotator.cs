@@ -7,12 +7,15 @@ public class SimpleMouseRotator: NetworkBehaviour {
 	public GameObject head;
 
     private Vector3 targetAngles;
-    private Quaternion originalRotation;
+    private Quaternion originalHeadRotation;
+	private float rotY;
 
     private void Start() {
-		originalRotation = head.transform.localRotation;
+		originalHeadRotation = head.transform.localRotation;
+//		lastUpVector = transform.up;
     }
 
+//	Vector3 lastUpVector;
     private void FixedUpdate() {
 		if (!isLocalPlayer)
 			return;
@@ -21,18 +24,33 @@ public class SimpleMouseRotator: NetworkBehaviour {
 
         // read input from mouse or mobile controls
 		float inputH = Input.GetAxis("Mouse X");
-		float inputV = Input.GetAxis("Mouse Y");              
+		float inputV = Input.GetAxis("Mouse Y");
 
         // with mouse input, we have direct control with no springback required.
-        targetAngles.y += inputH*rotationSpeed;
+		rotY += inputH*rotationSpeed;
         targetAngles.x += inputV*rotationSpeed;
 
 		targetAngles.x = Mathf.Clamp(targetAngles.x, -90, 90);
       
         // update the actual gameobject's rotation
-		head.transform.localRotation = originalRotation*Quaternion.Euler(-targetAngles.x, 0, 0);
+		head.transform.localRotation = originalHeadRotation*Quaternion.Euler(-targetAngles.x, 0, 0);
 
 		// propagate left-right rotation to parent
-		transform.localRotation = transform.localRotation*Quaternion.Euler(0, targetAngles.y, 0);
-    }
+		GravityAffected ga = GetComponent<GravityAffected>() as GravityAffected;
+
+//		Quaternion rotation = Quaternion.Euler (0, rotY, 0);
+//		Quaternion tilt = Quaternion.FromToRotation (Vector3.up, ga.getUpVector ());
+//		Quaternion result = tilt * rotation;
+//		transform.rotation = Quaternion.Slerp (transform.rotation, result, .9f); 
+		//transform.rotation = Quaternion.LookRotation (, ga.getUpVector ());
+		//transform.up = ga.getUpVector();
+		//transform.rotation = Quaternion.AngleAxis(rotY, ga.getUpVector());
+		//Debug.Log (transform.rotation + " " + transform.up);
+//		transform.rotation *= Quaternion.FromToRotation(lastUpVector, ga.getUpVector());
+		transform.Rotate(new Vector3(0, inputH*rotationSpeed, 0), Space.Self);
+		transform.rotation = Quaternion.LookRotation(ga.getUpVector(), -transform.forward);
+		transform.Rotate (Vector3.right, 90f);
+
+		//lastUpVector = ga.getUpVector ();
+    } 
 }

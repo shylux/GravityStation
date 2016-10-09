@@ -6,6 +6,9 @@ public class GravityAffected : NetworkBehaviour {
 	GravityController controller;
 	Rigidbody rigid;
 
+	public bool applyGravity = true;
+	public bool setUpVector = true;
+
 	// Use this for initialization
 	void Start () {
 		if (!isLocalPlayer)
@@ -22,6 +25,20 @@ public class GravityAffected : NetworkBehaviour {
 		if (!isLocalPlayer || controller.sources.Count == 0)
 			return;
 
+		// apply gravity force
+		GravitySource nearestSource = getNearestSource();
+		Vector3 upVector = getUpVector();
+		Vector3 force = -upVector * nearestSource.force;
+		if (applyGravity)
+			rigid.AddForce (force);
+		if (setUpVector)
+			transform.up = upVector;
+
+		//transform.rotation = Quaternion.LookRotation(-force);//Quaternion.Euler (direction);
+		//transform.Rotate(Vector3.left, 90, Space.Self);
+	}
+
+	public GravitySource getNearestSource() {
 		float nearestSourceDistance = float.MaxValue;
 		GravitySource nearestSource = null;
 		foreach (GravitySource source in controller.sources) {
@@ -31,15 +48,14 @@ public class GravityAffected : NetworkBehaviour {
 				nearestSource = source;
 			}
 		}
+		return nearestSource;
+	}
 
-		// apply gravity force
+	public Vector3 getUpVector() {
+		GravitySource nearestSource = getNearestSource ();
 		Vector3 direction = (nearestSource.transform.position - this.transform.position).normalized;
-		Vector3 force = direction * nearestSource.force;
-		rigid.AddForce (force);
-		Debug.DrawLine (transform.position, nearestSource.transform.position, Color.red);
-		transform.up = -direction;
 
-		//transform.rotation = Quaternion.LookRotation(-force);//Quaternion.Euler (direction);
-		//transform.Rotate(Vector3.left, 90, Space.Self);
+		Debug.DrawLine (transform.position, nearestSource.transform.position, Color.red);
+		return -direction;
 	}
 }

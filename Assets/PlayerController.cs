@@ -36,7 +36,7 @@ public class PlayerController : NetworkBehaviour {
 	Camera lastCamera;
 	public override void OnStartLocalPlayer () {
 		base.OnStartLocalPlayer ();
-		GetComponent<MeshRenderer> ().material.color = Color.blue;
+		//GetComponent<MeshRenderer> ().material.color = Color.blue;
 
 		lastCamera = Camera.allCameras [0];
 		lastCamera.enabled = false;
@@ -49,16 +49,16 @@ public class PlayerController : NetworkBehaviour {
 
 	[Command]
 	void CmdFire() {
-		var bullet = (GameObject)Instantiate (
-			bulletPrefab,
-			bulletSpawn.position,
-			bulletSpawn.rotation
-		);
-
-		bullet.GetComponent<Rigidbody> ().velocity = bullet.transform.forward * 6;
-
-		NetworkServer.Spawn (bullet);
-
-		Destroy (bullet, 2f);
+//		var bullet = (GameObject)Instantiate (
+//			bulletPrefab,
+//			bulletSpawn.position,
+//			bulletSpawn.rotation
+//		);
+//
+//		bullet.GetComponent<Rigidbody> ().velocity = bullet.transform.forward * 6;
+//
+//		NetworkServer.Spawn (bullet);
+//
+//		Destroy (bullet, 2f);
 	}
 }

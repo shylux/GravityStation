@@ -6,21 +6,25 @@ public class SimpleMouseRotator: NetworkBehaviour {
     public float rotationSpeed = 10;
 	public GameObject head;
 
-    private Vector3 targetAngles;
-    private Quaternion originalHeadRotation;
-	private float rotY;
+	private float rotX, rotY;
+	private GravitySource lastGravSource;
 
     private void Start() {
-		originalHeadRotation = head.transform.localRotation;
-//		lastUpVector = transform.up;
     }
 
-//	Vector3 lastUpVector;
+	Quaternion rot = Quaternion.identity;
+	private Vector3 globalLookAt = Vector3.zero;
     private void FixedUpdate() {
 		if (!isLocalPlayer)
 			return;
-        // we make initial calculations from the original local rotation
-        //transform.localRotation = originalRotation;
+		
+//		if (rot != Quaternion.identity)
+//			return;
+
+		GravityAffected ga = GetComponent<GravityAffected>() as GravityAffected;
+
+		if (!lastGravSource)
+			lastGravSource = ga.getNearestSource ();
 
         // read input from mouse or mobile controls
 		float inputH = Input.GetAxis("Mouse X");
@@ -28,15 +32,16 @@ public class SimpleMouseRotator: NetworkBehaviour {
 
         // with mouse input, we have direct control with no springback required.
 		rotY += inputH*rotationSpeed;
-        targetAngles.x += inputV*rotationSpeed;
+        rotX += inputV*rotationSpeed;
 
-		targetAngles.x = Mathf.Clamp(targetAngles.x, -90, 90);
-      
-        // update the actual gameobject's rotation
-		head.transform.localRotation = originalHeadRotation*Quaternion.Euler(-targetAngles.x, 0, 0);
+		rotX = Mathf.Clamp(rotX, -90, 90);
+
+		Vector3 lastRotation = head.transform.forward;
+
+        // up/down
+		head.transform.localRotation = Quaternion.Euler(-rotX, 0, 0);
 
 		// propagate left-right rotation to parent
-		GravityAffected ga = GetComponent<GravityAffected>() as GravityAffected;
 
 //		Quaternion rotation = Quaternion.Euler (0, rotY, 0);
 //		Quaternion tilt = Quaternion.FromToRotation (Vector3.up, ga.getUpVector ());
@@ -47,10 +52,22 @@ public class SimpleMouseRotator: NetworkBehaviour {
 		//transform.rotation = Quaternion.AngleAxis(rotY, ga.getUpVector());
 		//Debug.Log (transform.rotation + " " + transform.up);
 //		transform.rotation *= Quaternion.FromToRotation(lastUpVector, ga.getUpVector());
+
+		// left/right
 		transform.Rotate(new Vector3(0, inputH*rotationSpeed, 0), Space.Self);
 		transform.rotation = Quaternion.LookRotation(ga.getUpVector(), -transform.forward);
 		transform.Rotate (Vector3.right, 90f);
 
+		if (lastGravSource != ga.getNearestSource ()) {
+			head.transform.LookAt(lastRotation*100000, transform.up);
+			Vector3 projectedX = Vector3.ProjectOnPlane(head.transform.forward, Vector3.Cross(head.transform.forward, transform.up));
+			float angleX = Vector3.Angle (projectedX, transform.up);
+
+			rotX = -angleX + 90;
+
+			Debug.Log ("rotX: " + rotX + " angle: " + angleX);
+			lastGravSource = ga.getNearestSource ();
+		}
 		//lastUpVector = ga.getUpVector ();
     } 
 }

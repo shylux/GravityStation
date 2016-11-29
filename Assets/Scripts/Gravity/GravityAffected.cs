@@ -33,9 +33,6 @@ public class GravityAffected : NetworkBehaviour {
 			rigid.AddForce (force);
 		if (setUpVector)
 			transform.up = upVector;
-
-		//transform.rotation = Quaternion.LookRotation(-force);//Quaternion.Euler (direction);
-		//transform.Rotate(Vector3.left, 90, Space.Self);
 	}
 
 	public GravitySource getNearestSource() {

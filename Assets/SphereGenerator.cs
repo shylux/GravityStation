@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+[RequireComponent (typeof (MeshRenderer))]
+[RequireComponent (typeof (MeshFilter))]
 public class SphereGenerator : MonoBehaviour {
 
 	[Tooltip("Approximate size of a tile in qubic meters.")]
@@ -77,7 +79,7 @@ public class SphereGenerator : MonoBehaviour {
 	}
 
 	void Start() {
-		MeshFilter filter = GetOrAddComponent< MeshFilter >();
+		MeshFilter filter = GetComponent< MeshFilter >();
 		Mesh mesh = filter.mesh;
 		if (mesh)
 			mesh.Clear ();
@@ -133,6 +135,7 @@ public class SphereGenerator : MonoBehaviour {
 		GameObject go = new GameObject ();
 		go.name = "Side";
 		go.transform.parent = this.transform;
+		go.transform.localPosition = Vector3.zero;
 
 		MeshRenderer meshRenderer = go.AddComponent<MeshRenderer> () as MeshRenderer;
 		meshRenderer.material = (this.GetComponent<MeshRenderer> () as MeshRenderer).material;
@@ -232,12 +235,5 @@ public class SphereGenerator : MonoBehaviour {
 		if (!uvs.Contains (uvPoints [2]))
 			return uvPoints [2];
 		return Vector2.zero;
-	}
-
-	T GetOrAddComponent<T>() where T: Component {
-		T component = gameObject.GetComponent<T> () as T;
-		if (component == null)
-			component = gameObject.AddComponent<T> () as T;
-		return component;
 	}
 }

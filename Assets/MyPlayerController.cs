@@ -2,7 +2,7 @@
 using System.Collections;
 using UnityEngine.Networking;
 
-public class PlayerController : NetworkBehaviour {
+public class MyPlayerController : NetworkBehaviour {
 
 	public float speed = 5f;
 	public float hover = 8f;

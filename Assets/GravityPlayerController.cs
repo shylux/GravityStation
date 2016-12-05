@@ -2,7 +2,12 @@
 using System.Collections;
 using UnityEngine.Networking;
 
-public class MyPlayerController : NetworkBehaviour {
+public class GravityPlayerController : NetworkBehaviour {
+	[SyncVar]
+	public string name;
+
+	[SyncVar]
+	public Color color;
 
 	public float speed = 5f;
 	public float hover = 8f;
@@ -37,18 +42,13 @@ public class MyPlayerController : NetworkBehaviour {
 		}
 	}
 		
-	Camera lastCamera;
 	public override void OnStartLocalPlayer () {
 		base.OnStartLocalPlayer ();
-		//GetComponent<MeshRenderer> ().material.color = Color.blue;
 
-		lastCamera = Camera.allCameras [0];
-		lastCamera.enabled = false;
 		GetComponentInChildren<Camera> ().enabled = true;
 	}
 	void OnDestroy() {
 		GetComponentInChildren<Camera> ().enabled = false;
-		lastCamera.enabled = true;
 	}
 
 	[Command]

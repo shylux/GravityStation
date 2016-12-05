@@ -7,7 +7,6 @@ public class GravityAffected : NetworkBehaviour {
 	Rigidbody rigid;
 
 	public bool applyGravity = true;
-	public bool setUpVector = true;
 
 	// Use this for initialization
 	void Start () {
@@ -31,8 +30,6 @@ public class GravityAffected : NetworkBehaviour {
 		Vector3 force = -upVector * nearestSource.force;
 		if (applyGravity)
 			rigid.AddForce (force);
-		if (setUpVector)
-			transform.up = upVector;
 	}
 
 	public GravitySource getNearestSource() {

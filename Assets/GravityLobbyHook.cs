@@ -10,7 +10,7 @@ public class GravityLobbyHook : LobbyHook {
 		GravityPlayerController player = gamePlayer.GetComponent<GravityPlayerController> ();
 
 		player.color = lobby.playerColor;
-		player.name = lobby.playerName;
+		player.username = lobby.playerName;
 		Debug.Log (player.name);
 	}
 }

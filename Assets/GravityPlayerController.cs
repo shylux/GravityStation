@@ -4,7 +4,7 @@ using UnityEngine.Networking;
 
 public class GravityPlayerController : NetworkBehaviour {
 	[SyncVar]
-	public string name;
+	public string username;
 
 	[SyncVar]
 	public Color color;
@@ -39,6 +39,12 @@ public class GravityPlayerController : NetworkBehaviour {
 
 		if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)) {
 			CmdFire();
+		}
+	}
+
+	void Start() {
+		foreach (Renderer renderer in GetComponentsInChildren<Renderer>( )) {
+			renderer.material.color = this.color;
 		}
 	}
 		

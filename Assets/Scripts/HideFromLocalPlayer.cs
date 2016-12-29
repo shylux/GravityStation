@@ -7,7 +7,7 @@ public class HideFromLocalPlayer : NetworkBehaviour {
 	// Use this for initialization
 	void Start () {
 		if (isLocalPlayer) {
-			foreach (Renderer renderer in gameObject.GetComponentsInChildren<Renderer>()) {
+			foreach (MeshRenderer renderer in gameObject.GetComponentsInChildren<MeshRenderer>()) {
 				renderer.enabled = false;
 			}
 			foreach (Canvas canvas in gameObject.GetComponentsInChildren<Canvas>()) {

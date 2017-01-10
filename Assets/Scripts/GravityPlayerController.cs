@@ -37,7 +37,7 @@ public class GravityPlayerController : NetworkBehaviour {
 		transform.Translate(movement, Space.Self);
 		Debug.DrawLine (_oldPosition, _oldPosition + (transform.position - _oldPosition) * 15);
 
-		if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)) {
+		if (Input.GetMouseButtonDown(0)) {
 			CmdFire();
 		}
 	}
@@ -59,6 +59,8 @@ public class GravityPlayerController : NetworkBehaviour {
 
 	[Command]
 	void CmdFire() {
+		var gun = this.GetComponentsInChildren<GunBehaviour> ();
+		gun[0].Fire ();
 //		var bullet = (GameObject)Instantiate (
 //			bulletPrefab,
 //			bulletSpawn.position,

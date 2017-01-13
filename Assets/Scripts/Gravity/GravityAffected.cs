@@ -10,7 +10,7 @@ public class GravityAffected : NetworkBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		if (!isLocalPlayer)
+		if (!isLocalPlayer && this.tag == "Player")
 			return;
 		rigid = GetComponent (typeof(Rigidbody)) as Rigidbody;
 		rigid.useGravity = false;
@@ -21,7 +21,7 @@ public class GravityAffected : NetworkBehaviour {
 	}
 
 	void FixedUpdate () {
-		if (!isLocalPlayer || controller.sources.Count == 0)
+		if ((!isLocalPlayer && this.tag == "Player") || controller.sources.Count == 0)
 			return;
 
 		// apply gravity force

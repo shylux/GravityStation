@@ -22,9 +22,6 @@ public class Health : NetworkBehaviour {
 	}
 
 	public void takeDamage(int damage) {
-		if (!isServer)
-			return;
-
 		currentHealth -= damage;
 		if (currentHealth <= 0) {
 			currentHealth = maxHealth;
@@ -36,7 +33,8 @@ public class Health : NetworkBehaviour {
 	}
 		
 	void OnChangeHealth(int currentHealth) {
-		healthBar.sizeDelta = new Vector2 (currentHealth, healthBar.sizeDelta.y);
+		if (healthBar)
+			healthBar.sizeDelta = new Vector2 (currentHealth, healthBar.sizeDelta.y);
 	}
 
 	[ClientRpc]

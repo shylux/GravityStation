@@ -2,10 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Networking;
 
 [RequireComponent (typeof (MeshRenderer))]
 [RequireComponent (typeof (MeshFilter))]
-public class SphereGenerator : MonoBehaviour {
+[RequireComponent (typeof (NetworkIdentity))]
+public class SphereGenerator : NetworkBehaviour {
 
 	[Tooltip("Approximate size of a tile in qubic meters.")]
 	public float tileSize = 1f;
@@ -79,6 +81,9 @@ public class SphereGenerator : MonoBehaviour {
 	}
 
 	void Start() {
+		if (!isServer)
+			return;
+
 		MeshFilter filter = GetComponent< MeshFilter >();
 		Mesh mesh = filter.mesh;
 		if (mesh)
@@ -143,6 +148,9 @@ public class SphereGenerator : MonoBehaviour {
 		Mesh mesh = new Mesh ();
 		meshFilter.mesh = mesh;
 		MeshCollider collider = go.AddComponent<MeshCollider> () as MeshCollider;
+
+		Health health = go.AddComponent<Health> () as Health;
+		health.destroyOnDeath = true;
 
 		List<TriangleIndices> faces = new List<TriangleIndices>();
 		List<Vector3> vertList = new List<Vector3>();

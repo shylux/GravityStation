@@ -59,8 +59,8 @@ public class GravityPlayerController : NetworkBehaviour {
 
 	[Command]
 	void CmdFire() {
-		var gun = this.GetComponentsInChildren<GunBehaviour> ();
-		gun[0].Fire ();
+		var gun = this.GetComponentInChildren<GunBehaviour> ();
+		gun.Fire ();
 //		var bullet = (GameObject)Instantiate (
 //			bulletPrefab,
 //			bulletSpawn.position,

@@ -4,6 +4,8 @@ using System.Collections;
 public class GravitySource : MonoBehaviour {
 
 	public float force = 9.81f;
+	[Tooltip("Radius of object.")]
+	public float radius;
 
 	void Start() {
 		// register
